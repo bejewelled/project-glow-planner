@@ -1,33 +1,50 @@
 import { json } from '@sveltejs/kit';
-import { getDb } from '$lib/db.js';
-import { ObjectId } from 'mongodb';
+import { getRedis } from '$lib/redis.js';
 
-// GET /api/preferences — return all preferences as { artistKey: [{ name, priority }] }
+// GET /api/preferences — return all preferences as { artistKey: [{ memberId, name, priority }] }
 export async function GET() {
-  const db = await getDb();
-  const prefs = await db.collection('preferences').find({}).toArray();
-  const members = await db.collection('members').find({}).toArray();
+  try {
+    const redis = getRedis();
 
-  const memberMap = Object.fromEntries(members.map((m) => [m._id.toString(), m.name]));
+    const [prefsHash, memberIds] = await Promise.all([
+      redis.hgetall('preferences'),
+      redis.smembers('members')
+    ]);
 
-  /** @type {Record<string, Array<{memberId: string, name: string, priority: number}>>} */
-  const result = {};
-  for (const pref of prefs) {
-    const key = pref.artistKey;
-    if (!result[key]) result[key] = [];
-    result[key].push({
-      memberId: pref.memberId.toString(),
-      name: memberMap[pref.memberId.toString()] ?? 'Unknown',
-      priority: pref.priority
-    });
+    // Resolve all member names in one round-trip
+    const memberNames = {};
+    if (memberIds.length) {
+      const values = await Promise.all(memberIds.map(id => redis.get(`member:${id}`)));
+      memberIds.forEach((id, i) => {
+        if (values[i]) memberNames[id] = JSON.parse(values[i]).name;
+      });
+    }
+
+    // Build result grouped by artistKey
+    const result = {};
+    if (prefsHash) {
+      for (const [field, priority] of Object.entries(prefsHash)) {
+        const sep = field.indexOf('|');
+        const memberId = field.slice(0, sep);
+        const artistKey = field.slice(sep + 1);
+        if (!result[artistKey]) result[artistKey] = [];
+        result[artistKey].push({
+          memberId,
+          name: memberNames[memberId] ?? 'Unknown',
+          priority: Number(priority)
+        });
+      }
+    }
+
+    for (const key of Object.keys(result)) {
+      result[key].sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
+    }
+
+    return json(result);
+  } catch (err) {
+    console.error('Preferences GET error:', err);
+    return json({ error: 'Server error.' }, { status: 500 });
   }
-
-  // Sort each artist's list by priority ascending, then name
-  for (const key of Object.keys(result)) {
-    result[key].sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
-  }
-
-  return json(result);
 }
 
 // PUT /api/preferences — set or update a preference
@@ -35,17 +52,17 @@ export async function PUT({ request }) {
   const { memberId, artistKey, priority } = await request.json();
 
   if (!memberId || !artistKey || ![1, 2, 3, 4].includes(priority)) {
-    return json({ error: 'memberId, artistKey, and priority (1–3) required.' }, { status: 400 });
+    return json({ error: 'memberId, artistKey, and priority (1–4) required.' }, { status: 400 });
   }
 
-  const db = await getDb();
-  await db.collection('preferences').updateOne(
-    { memberId: new ObjectId(memberId), artistKey },
-    { $set: { priority } },
-    { upsert: true }
-  );
-
-  return json({ ok: true });
+  try {
+    const redis = getRedis();
+    await redis.hset('preferences', `${memberId}|${artistKey}`, priority);
+    return json({ ok: true });
+  } catch (err) {
+    console.error('Preferences PUT error:', err);
+    return json({ error: 'Server error.' }, { status: 500 });
+  }
 }
 
 // DELETE /api/preferences — remove a preference
@@ -56,11 +73,12 @@ export async function DELETE({ request }) {
     return json({ error: 'memberId and artistKey required.' }, { status: 400 });
   }
 
-  const db = await getDb();
-  await db.collection('preferences').deleteOne({
-    memberId: new ObjectId(memberId),
-    artistKey
-  });
-
-  return json({ ok: true });
+  try {
+    const redis = getRedis();
+    await redis.hdel('preferences', `${memberId}|${artistKey}`);
+    return json({ ok: true });
+  } catch (err) {
+    console.error('Preferences DELETE error:', err);
+    return json({ error: 'Server error.' }, { status: 500 });
+  }
 }

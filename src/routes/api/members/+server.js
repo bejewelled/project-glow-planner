@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { getDb } from '$lib/db.js';
+import { getRedis } from '$lib/redis.js';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
 // POST /api/members — register a new member
 export async function POST({ request }) {
@@ -11,22 +12,21 @@ export async function POST({ request }) {
   }
 
   try {
-    const db = await getDb();
-    const existing = await db.collection('members').findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
-    });
-
+    const redis = getRedis();
+    const nameKey = `name:${name.trim().toLowerCase()}`;
+    const existing = await redis.get(nameKey);
     if (existing) {
       return json({ error: 'That name is already taken.' }, { status: 409 });
     }
 
+    const id = randomUUID();
     const pinHash = await bcrypt.hash(pin, 10);
-    const result = await db.collection('members').insertOne({
-      name: name.trim(),
-      pinHash
-    });
 
-    return json({ _id: result.insertedId.toString(), name: name.trim() }, { status: 201 });
+    await redis.set(`member:${id}`, JSON.stringify({ name: name.trim(), pinHash }));
+    await redis.set(nameKey, id);
+    await redis.sadd('members', id);
+
+    return json({ _id: id, name: name.trim() }, { status: 201 });
   } catch (err) {
     console.error('Member creation error:', err);
     return json({ error: 'Server error. Please try again.' }, { status: 500 });

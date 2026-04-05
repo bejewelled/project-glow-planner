@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getDb } from '$lib/db.js';
+import { getRedis } from '$lib/redis.js';
 import bcrypt from 'bcryptjs';
 
 // POST /api/auth — log in with name + PIN
@@ -11,21 +11,21 @@ export async function POST({ request }) {
   }
 
   try {
-    const db = await getDb();
-    const member = await db.collection('members').findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
-    });
-
-    if (!member) {
+    const redis = getRedis();
+    const memberId = await redis.get(`name:${name.trim().toLowerCase()}`);
+    if (!memberId) {
       return json({ error: 'No account found with that name.' }, { status: 404 });
     }
+
+    const memberJson = await redis.get(`member:${memberId}`);
+    const member = JSON.parse(memberJson);
 
     const valid = await bcrypt.compare(pin, member.pinHash);
     if (!valid) {
       return json({ error: 'Incorrect PIN.' }, { status: 401 });
     }
 
-    return json({ _id: member._id.toString(), name: member.name });
+    return json({ _id: memberId, name: member.name });
   } catch (err) {
     console.error('Auth error:', err);
     return json({ error: 'Server error. Please try again.' }, { status: 500 });

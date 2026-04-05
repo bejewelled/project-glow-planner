@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "mongodb": "^6.15.0"
+    "ioredis": "^5.10.1"
   },
   "type": "module"
 }
