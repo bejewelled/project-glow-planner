@@ -163,7 +163,7 @@
   .p2 { background: #71350055; color: #fde047; border: 1px solid #854d0e; }
   /* Priority 3 — light blue */
   .p3 { background: #0c2a4a55; color: #93c5fd; border: 1px solid #1e4a7a; }
-  /* Priority 4 — gray */
+  /* Priority 4 — gray  */
   .p4 { background: #1a1a1a55; color: #9ca3af; border: 1px solid #374151; }
 
   .mine { font-style: italic; }
