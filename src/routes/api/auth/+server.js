@@ -10,19 +10,24 @@ export async function POST({ request }) {
     return json({ error: 'Name and PIN required.' }, { status: 400 });
   }
 
-  const db = await getDb();
-  const member = await db.collection('members').findOne({
-    name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
-  });
+  try {
+    const db = await getDb();
+    const member = await db.collection('members').findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+    });
 
-  if (!member) {
-    return json({ error: 'Member not found.' }, { status: 404 });
+    if (!member) {
+      return json({ error: 'No account found with that name.' }, { status: 404 });
+    }
+
+    const valid = await bcrypt.compare(pin, member.pinHash);
+    if (!valid) {
+      return json({ error: 'Incorrect PIN.' }, { status: 401 });
+    }
+
+    return json({ _id: member._id.toString(), name: member.name });
+  } catch (err) {
+    console.error('Auth error:', err);
+    return json({ error: 'Server error. Please try again.' }, { status: 500 });
   }
-
-  const valid = await bcrypt.compare(pin, member.pinHash);
-  if (!valid) {
-    return json({ error: 'Incorrect PIN.' }, { status: 401 });
-  }
-
-  return json({ _id: member._id.toString(), name: member.name });
 }

@@ -10,20 +10,25 @@ export async function POST({ request }) {
     return json({ error: 'Name and 4-digit PIN required.' }, { status: 400 });
   }
 
-  const db = await getDb();
-  const existing = await db.collection('members').findOne({
-    name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
-  });
+  try {
+    const db = await getDb();
+    const existing = await db.collection('members').findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+    });
 
-  if (existing) {
-    return json({ error: 'That name is already taken.' }, { status: 409 });
+    if (existing) {
+      return json({ error: 'That name is already taken.' }, { status: 409 });
+    }
+
+    const pinHash = await bcrypt.hash(pin, 10);
+    const result = await db.collection('members').insertOne({
+      name: name.trim(),
+      pinHash
+    });
+
+    return json({ _id: result.insertedId.toString(), name: name.trim() }, { status: 201 });
+  } catch (err) {
+    console.error('Member creation error:', err);
+    return json({ error: 'Server error. Please try again.' }, { status: 500 });
   }
-
-  const pinHash = await bcrypt.hash(pin, 10);
-  const result = await db.collection('members').insertOne({
-    name: name.trim(),
-    pinHash
-  });
-
-  return json({ _id: result.insertedId.toString(), name: name.trim() }, { status: 201 });
 }

@@ -23,10 +23,24 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), pin })
       });
-      const data = await res.json();
-      if (!res.ok) { error = data.error; return; }
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        error = 'Server error. Please try again.';
+        return;
+      }
+
+      if (!res.ok) {
+        error = data.error || 'Something went wrong. Please try again.';
+        return;
+      }
+
       currentUser.login(data);
       onClose();
+    } catch {
+      error = 'Network error. Please check your connection and try again.';
     } finally {
       loading = false;
     }
