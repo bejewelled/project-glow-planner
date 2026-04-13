@@ -10,7 +10,7 @@
   <header>
     <div class="brand">
       <span class="logo">⚡</span>
-      <span class="title">EDC 2026 Preferences</span>
+      <span class="title">Project Glow Preferences</span>
     </div>
     <div class="user-area">
       {#if $currentUser}
