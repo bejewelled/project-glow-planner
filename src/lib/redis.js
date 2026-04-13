@@ -11,6 +11,7 @@ export function getRedis() {
     client = new Redis(env.REDIS_URL, { lazyConnect: false });
     client.on('error', (err) => {
       console.error('Redis client error:', err);
+      client = null;
     });
   }
   return client;
