@@ -19,7 +19,7 @@ export const ARTISTS = {
       'Eric Prydz',
       'KY William',
       'Sara Landry',
-      'Starjunkies'
+      'Starjunk 95'
     ],
     'Pulse Stage': [
       'Effin',
@@ -29,7 +29,7 @@ export const ARTISTS = {
       'Mary Droppinz',
       'Ray Volpe',
       'Shizz Lo B2B Brainrack',
-      'Woon Approvd',
+      'Wook Approvd',
       'Wooli',
       'Zeds Dead'
     ],
@@ -50,11 +50,11 @@ export const ARTISTS = {
       'Arylia',
       'Avello',
       'Excision B2B Sullivan King',
-      'Gryfin (Sunset Set)',
+      'Gryffin (Sunset Set)',
       'Krream',
       'LP Giobbi',
       'Mau P',
-      'Ninjarechi',
+      'Ninajirachi',
       'Porter Robinson (DJ Set)',
       'Probcause'
     ],
@@ -77,7 +77,7 @@ export const ARTISTS = {
       'Queer Chaos',
       'Rezident',
       'Spencer Brown B2B Orion',
-      'YDO'
+      'YDG'
     ]
   }
 };
