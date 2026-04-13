@@ -20,3 +20,11 @@ export function getRedis() {
   }
   return client;
 }
+
+// Namespaced key helpers — all glow-planner keys are isolated under "glow:"
+export const keys = {
+  preferences: 'glow:preferences',
+  members: 'glow:members',
+  member: (id) => `glow:member:${id}`,
+  name: (name) => `glow:name:${name}`,
+};
