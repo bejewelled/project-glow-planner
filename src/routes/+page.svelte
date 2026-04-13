@@ -4,13 +4,13 @@
   import { ARTISTS, STAGES, DAYS, artistKey } from '$lib/data/artists.js';
   import StageColumn from '$lib/components/StageColumn.svelte';
 
-  let activeDay = $state('FRIDAY');
+  let activeDay = $state('SATURDAY');
   let preferences = $state({});
   let loading = $state(true);
   let view = $state('grid'); // 'grid' | 'picks'
   let expandedRows = $state(new Set());
 
-  const DAY_LABELS = { FRIDAY: 'Friday', SATURDAY: 'Saturday', SUNDAY: 'Sunday' };
+  const DAY_LABELS = { SATURDAY: 'Saturday', SUNDAY: 'Sunday' };
   const PRIORITY_LABELS = { 1: 'HIGH !!!', 2: 'Medium !!', 3: 'Low !', 4: 'Maybe ~' };
   const PRIORITY_CLASSES = { 1: 'p1', 2: 'p2', 3: 'p3', 4: 'p4' };
 
@@ -57,7 +57,7 @@
 </script>
 
 <svelte:head>
-  <title>EDC 2026 Preferences</title>
+  <title>Project Glow Preferences</title>
 </svelte:head>
 
 <div class="page">
