@@ -8,14 +8,9 @@ export function getRedis() {
     if (!env.REDIS_URL) {
       throw new Error('REDIS_URL environment variable is not set');
     }
-    client = new Redis(env.REDIS_URL, {
-      lazyConnect: false,
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 2,
-    });
+    client = new Redis(env.REDIS_URL, { lazyConnect: false });
     client.on('error', (err) => {
       console.error('Redis client error:', err);
-      client = null;
     });
   }
   return client;
